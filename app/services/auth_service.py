@@ -61,7 +61,7 @@ class AuthService:
 
     def validar_refresh_token(self,refresh_token: str):
         try:
-            # decodifica o token usando a chave secreta e algoritmo
+            # decodifica o token usando a chave secreta e algoritmo teste
             payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
 
             usuario_id = payload.get("sub")
