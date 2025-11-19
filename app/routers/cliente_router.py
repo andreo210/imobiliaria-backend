@@ -16,8 +16,8 @@ def get_cliente_service(db: Session = Depends(get_db)):
 @router.post("/", response_model=ClienteRead)
 async def criar_cliente(
     cliente: ClienteCreate,
-    service: ClienteService = Depends(get_cliente_service),
-    current_user: dict = Depends(get_current_user)   # protege rota
+    service: ClienteService = Depends(get_cliente_service)
+     # protege rota
 ):
     try:
         return service.criar_cliente(cliente)
@@ -27,15 +27,15 @@ async def criar_cliente(
 @router.get("/{cliente_id}", response_model=ClienteRead)
 async def get_cliente(
     cliente_id: int,
-    service: ClienteService = Depends(get_cliente_service),
-    current_user: dict = Depends(get_current_user)   # protege rota
+    service: ClienteService = Depends(get_cliente_service)
+        # protege rota current_user: dict = Depends(get_current_user)
 ):
     cliente = service.buscar_por_id(cliente_id)
     return cliente
 
 @router.get("/", response_model=list[ClienteRead])
 async def listar_cliente(
-    service: ClienteService = Depends(get_cliente_service),
-    current_user: dict = Depends(get_current_user)   # protege rota
+    service: ClienteService = Depends(get_cliente_service)
+        # protege rota current_user: dict = Depends(get_current_user)
 ):
     return service.listar_cliente()

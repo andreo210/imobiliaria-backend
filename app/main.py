@@ -4,6 +4,7 @@ from app.routers import cliente_router
 from starlette.requests import Request
 from app.schemas.ProblemsDetails import ProblemDetails404
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(title="API Imobiliária")
 
 app.include_router(usuario_router.router)
@@ -13,7 +14,19 @@ app.include_router(amenidade_router.router)
 # app.include_router(contrato.router)
 # app.include_router(pagamento.router)
 
+# Defina as origens permitidas
+origins = [
+    "http://localhost:4200",
+    "http://127.0.0.1:4200",
+]
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,          # ou ["*"] para liberar tudo
+    allow_credentials=True,
+    allow_methods=["*"],            # GET, POST, PUT, DELETE, OPTIONS
+    allow_headers=["*"],            # Autorize todos os headers
+)
 
 
 @app.exception_handler(Exception)

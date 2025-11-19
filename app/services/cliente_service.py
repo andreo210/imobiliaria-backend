@@ -12,7 +12,8 @@ class ClienteService:
         novo_cliente = ClienteModel(
             nome=cliente_create.nome,
             email=cliente_create.email,
-            telefone=cliente_create.telefone
+            telefone=cliente_create.telefone,
+            observacao=cliente_create.observacao
         )
         return self.repository.create(novo_cliente)
 

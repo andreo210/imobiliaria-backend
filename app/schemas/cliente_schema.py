@@ -5,6 +5,7 @@ class ClienteBase(BaseModel):
     nome: str
     email: EmailStr
     telefone: str
+    observacao: str = None
 
 class ClienteCreate(ClienteBase):
     pass
