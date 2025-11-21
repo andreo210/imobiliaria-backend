@@ -25,7 +25,6 @@ class UsuarioRepository:
         self.db.delete(usuario)
         self.db.commit()
 
-
     def update(self, id: int, data: UsuarioBase):
         model = self.get_by_id(id)
         if not model:
