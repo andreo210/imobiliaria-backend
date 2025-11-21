@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import usuario_router, amenidade_router, auth_router  # importar outros routers depois
+from app.routers import usuario_router, amenidade_router, auth_router ,tipo_imovel_router # importar outros routers depois
 from app.routers import cliente_router
 from starlette.requests import Request
 from app.schemas.ProblemsDetails import ProblemDetails404
@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(title="API Imobiliária")
 
+app.include_router(tipo_imovel_router.router)
 app.include_router(usuario_router.router)
 app.include_router(auth_router.router)
 app.include_router(cliente_router.router)

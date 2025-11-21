@@ -18,11 +18,18 @@ class UsuarioService:
         )
         return self.repository.create(novo_usuario)
 
+
     def listar_usuarios(self):
         return self.repository.get_all()
 
     def buscar_por_id(self, id: int):
         return self.repository.get_by_id(id)
+
+    def deletar(self, model: Usuario):
+        return self.repository.delete(model)
+
+    def atualizar(self, id: int, usuario_update: UsuarioBase):
+        return self.repository.update(id, usuario_update)
 
     def autenticar(self, email: str, senha: str):
         usuario = self.repository.get_by_email(email)

@@ -22,3 +22,9 @@ class ClienteService:
 
     def buscar_por_id(self, id: int):
         return self.repository.get_by_id(id)
+
+    def deletar(self, model: ClienteModel    ):
+        return self.repository.delete(model)
+
+    def atualizar(self, id: int, cliente_update: ClienteBase):
+        return self.repository.update(id, cliente_update)

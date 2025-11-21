@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.cliente_model import ClienteModel
+from app.schemas.cliente_schema import ClienteBase
 
 class ClienteRepository:
     def __init__(self, db: Session):
@@ -23,3 +24,15 @@ class ClienteRepository:
     def delete(self, usuario: ClienteModel):
         self.db.delete(usuario)
         self.db.commit()
+
+    def update(self, id: int, data: ClienteBase):
+        model = self.get_by_id(id)
+        if not model:
+            return None
+        # Atualiza apenas os campos enviados
+        for field, value in data.dict(exclude_unset=True).items():
+            setattr(model, field, value)
+        self.db.commit()
+        self.db.refresh(model)
+        return model
+
