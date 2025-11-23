@@ -13,13 +13,14 @@ class UsuarioService:
         novo_usuario = Usuario(
             nome=usuario_create.nome,
             email=usuario_create.email,
-            senha_hash=codificar_senha(usuario_create.senha),
+            senha=codificar_senha(usuario_create.senha),
             papel=usuario_create.papel
         )
         return self.repository.create(novo_usuario)
 
 
     def listar_usuarios(self):
+
         return self.repository.get_all()
 
     def buscar_por_id(self, id: int):
@@ -29,10 +30,12 @@ class UsuarioService:
         return self.repository.delete(model)
 
     def atualizar(self, id: int, usuario_update: UsuarioBase):
+        usuario_update.nome = usuario_update.nome.upper()
+        usuario_update.senha = codificar_senha(usuario_update.senha)
         return self.repository.update(id, usuario_update)
 
     def autenticar(self, email: str, senha: str):
         usuario = self.repository.get_by_email(email)
-        if not usuario or not decodificar_senha(senha, usuario.senha_hash):
+        if not usuario or not decodificar_senha(senha, usuario.senha):
             return None
         return usuario
