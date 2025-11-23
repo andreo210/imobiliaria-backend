@@ -9,4 +9,5 @@ class ClienteModel(Base):
     nome = Column(String(100), nullable=False)
     email = Column(String(100),unique=True, nullable=False)
     telefone = Column(String(20), nullable=True)
+    observacao = Column(String(1000), nullable=True)
     criado_em = Column(DateTime, default=datetime.utcnow)

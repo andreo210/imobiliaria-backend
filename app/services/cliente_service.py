@@ -12,7 +12,8 @@ class ClienteService:
         novo_cliente = ClienteModel(
             nome=cliente_create.nome,
             email=cliente_create.email,
-            telefone=cliente_create.telefone
+            telefone=cliente_create.telefone,
+            observacao=cliente_create.observacao
         )
         return self.repository.create(novo_cliente)
 
@@ -21,3 +22,9 @@ class ClienteService:
 
     def buscar_por_id(self, id: int):
         return self.repository.get_by_id(id)
+
+    def deletar(self, model: ClienteModel    ):
+        return self.repository.delete(model)
+
+    def atualizar(self, id: int, cliente_update: ClienteBase):
+        return self.repository.update(id, cliente_update)
