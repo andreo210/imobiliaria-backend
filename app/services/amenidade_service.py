@@ -1,22 +1,28 @@
-from app.repositories.cliente_repository import ClienteRepository
-from app.schemas.amenidade_schema import AmenidadeCreate,AmenidadeBase,AmenidadeRead
+from app.repositories.base_repository import BaseRepository
+from app.schemas.amenidade_schema import AmenidadeCreate
 from app.models.amenidade_model import AmenidadeModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
 
 class AmenidadeService:
-    def __init__(self, repository: ClienteRepository):
-        self.repository = repository
 
-    def criar_amenidade(self, amenidade: AmenidadeCreate):
-        nova_amenidade = AmenidadeModel(
-            nome=amenidade.nome
-        )
-        return self.repository.create(nova_amenidade)
+    @staticmethod
+    async def criar_amenidade(db: AsyncSession, amenidade: AmenidadeCreate):
+        repo = BaseRepository(AmenidadeModel)
+        nova_amenidade = AmenidadeModel(nome=amenidade.nome)
+        return await repo.criar(db, nova_amenidade)
 
-    def listar_amenidade(self):
-        return self.repository.get_all()
+    @staticmethod
+    async def listar_amenidade(db: AsyncSession):
+        repo = BaseRepository(AmenidadeModel)
+        return await repo.obter_todos(db)
 
-    def buscar_por_id(self, id: int):
-        return self.repository.get_by_id(id)
+    @staticmethod
+    async def buscar_por_id(db: AsyncSession, id: int):
+        repo = BaseRepository(AmenidadeModel)
+        return await repo.obter_id(db, id)
 
-    async def deletar(self, id: int):
-        return  self.repository.delete(id)
+    @staticmethod
+    async def deletar(db: AsyncSession, id: int):
+        repo = BaseRepository(AmenidadeModel)
+        return await repo.deletar(db, id)

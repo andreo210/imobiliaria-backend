@@ -5,11 +5,17 @@ class UsuarioBase(BaseModel):
     nome: str
     email: EmailStr
     papel: str
+    senha : str
+
+class UsuarioRead(BaseModel):
+    nome: str
+    email: EmailStr
+    papel: str
 
 class UsuarioCreate(UsuarioBase):
     senha: str
 
-class UsuarioResponse(UsuarioBase):
+class UsuarioResponse(UsuarioRead):
     id: int
     criado_em: datetime
 

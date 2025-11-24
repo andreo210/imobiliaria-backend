@@ -7,7 +7,7 @@ ALGORITHM = "HS256"
 
 security =  HTTPBearer()
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def obter_usuario_corrente(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials  # aqui você pega a string JWT
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -28,3 +28,14 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+
+# MÉTODO ESTÁTICO PARA VERIFICAR ADMIN
+@staticmethod
+def verificar_admin(usuario: dict = Depends(obter_usuario_corrente)):
+    """Verifica se o usuário tem papel de admin"""
+    if usuario.get("papel") != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Permissão insuficiente. Apenas administradores podem realizar esta ação."
+        )
+    return usuario
