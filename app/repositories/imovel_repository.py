@@ -9,7 +9,7 @@ class ImovelRepository(BaseRepository[ImovelModel]):
     def __init__(self):
         super().__init__(ImovelModel)
 
-    def get_full(self, db: AsyncSession, id: int):
+    async def get_full(self, db: AsyncSession, id: int):
         stmt = (
             select(ImovelModel)
             .where(ImovelModel.id == id)
@@ -20,10 +20,10 @@ class ImovelRepository(BaseRepository[ImovelModel]):
             )
         )
 
-        result = db.execute(stmt)
+        result = await  db.execute(stmt)
         return result.scalar_one_or_none()
 
-    def get_all_full(self, db: AsyncSession):
+    async def get_all_full(self, db: AsyncSession):
         stmt = (
             select(ImovelModel)
             .options(
@@ -32,5 +32,6 @@ class ImovelRepository(BaseRepository[ImovelModel]):
                 selectinload(ImovelModel.tipo),
             )
         )
-        result = db.execute(stmt)
+        result = await db.execute(stmt)
         return result.scalars().all()
+

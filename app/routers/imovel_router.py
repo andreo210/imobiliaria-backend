@@ -13,26 +13,26 @@ router = APIRouter(prefix="/imoveis", tags=["Imóveis"])
 
 
 @router.get("/", response_model=list[ImovelResponse])
-def listar_imoveis(db: AsyncSession = Depends(get_db)):
-    return  ImovelService.listar(db)
+async def listar_imoveis(db: AsyncSession = Depends(get_db)):
+    return await ImovelService.listar(db)
 
 
 @router.get("/{id}", response_model=ImovelResponse)
-def obter_imovel(id: int, db: AsyncSession = Depends(get_db)):
-    imovel = ImovelService.obter(db, id)
+async def obter_imovel(id: int, db: AsyncSession = Depends(get_db)):
+    imovel = await ImovelService.obter(db, id)
     if not imovel:
         raise HTTPException(404, "Imóvel não encontrado")
     return imovel
 
 
 @router.post("/", response_model=ImovelResponse, status_code=201)
-def criar_imovel(payload: ImovelCreate, db: AsyncSession = Depends(get_db)):
-    return  ImovelService.criar(db, payload)
+async def criar_imovel(payload: ImovelCreate, db: AsyncSession = Depends(get_db)):
+    return await ImovelService.criar(db, payload)
 
 
 @router.put("/{id}", response_model=ImovelResponse)
-def atualizar_imovel(id: int, payload: ImovelUpdate, db: AsyncSession = Depends(get_db)):
-    imovel =  ImovelService.atualizar(db, id, payload)
+async def atualizar_imovel(id: int, payload: ImovelUpdate, db: AsyncSession = Depends(get_db)):
+    imovel =  await ImovelService.atualizar(db, id, payload)
     if not imovel:
         raise HTTPException(404, "Imóvel não encontrado")
     return imovel

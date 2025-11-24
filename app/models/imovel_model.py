@@ -27,9 +27,9 @@ class ImovelModel(Base):
     tipo_id: Optional[int] = Column(Integer, ForeignKey("TipoImovel.id"), nullable=True)
 
     # relações
-    tipo = relationship("TipoImovelModel", back_populates="imoveis")
-    fotos = relationship("FotoImovelModel", back_populates="imovel", cascade="all, delete-orphan")
-    amenidades = relationship("AmenidadeModel",secondary=imovel_amenidade_table, back_populates="imoveis")
+    tipo = relationship("TipoImovelModel", back_populates="imoveis",lazy="raise")
+    fotos = relationship("FotoImovelModel", back_populates="imovel", cascade="all, delete-orphan",lazy="raise")
+    amenidades = relationship("AmenidadeModel",secondary=imovel_amenidade_table, back_populates="imoveis",lazy="raise")
 
     def __repr__(self) -> str:
         return f"<Imovel(id={self.id}, titulo={self.titulo}, preco={self.preco}, status={self.status})>"

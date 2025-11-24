@@ -9,4 +9,4 @@ class TipoImovelModel(Base):
     nome = Column(String(50), nullable=False)
 
     # relação opcional para ver os imóveis daquele tipo
-    imoveis = relationship("ImovelModel", back_populates="tipo")
+    imoveis = relationship("ImovelModel", back_populates="tipo",lazy="raise")

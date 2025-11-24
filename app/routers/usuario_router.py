@@ -1,64 +1,82 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from starlette import status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.services.usuario_service import UsuarioService
-from app.services.auth_service import AuthService
 from app.repositories.usuario_repository import UsuarioRepository
-from app.schemas.usuario_schema import UsuarioBase, UsuarioCreate,UsuarioResponse
-from app.core.security import obter_usuario_corrente,verificar_admin  # importa a funções de segurança
+from app.schemas.usuario_schema import UsuarioBase, UsuarioCreate, UsuarioResponse
+from app.core.security import verificar_admin  # funções de segurança
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
-def get_usuario_service(db: Session = Depends(get_db)):
-    repository = UsuarioRepository(db)
+
+# Dependência para injetar o service
+def get_usuario_service(db: AsyncSession = Depends(get_db)):
+    repository = UsuarioRepository()
     service = UsuarioService(repository)
     return service
 
+
 @router.post("/", response_model=UsuarioResponse)
-def criar_usuario(
+async def criar_usuario(
     usuario: UsuarioCreate,
+    db: AsyncSession = Depends(get_db),
     service: UsuarioService = Depends(get_usuario_service),
-    usuario_atual: dict = Depends(verificar_admin)  # Corrigido: sem parênteses
+    usuario_atual: dict = Depends(verificar_admin)  # apenas admin pode criar
 ):
     """
-    Cria um novo usuário
-    Apenas administradores podem criar usuários
+    Cria um novo usuário.
+    Apenas administradores podem criar usuários.
     """
     try:
-        return service.criar_usuario(usuario)
+        return await service.criar_usuario(db, usuario)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
+
 @router.get("/", response_model=list[UsuarioResponse])
-def listar(service: UsuarioService = Depends(get_usuario_service)):
-    return service.listar_usuarios()
-
-
-@router.get("/{usuarios_id}", response_model=UsuarioResponse)
-async def get_cliente(
-    usuarios_id: int,
+async def listar(
+    db: AsyncSession = Depends(get_db),
     service: UsuarioService = Depends(get_usuario_service)
-        # protege rota current_user: dict = Depends(get_current_user)
 ):
-    cliente = service.buscar_por_id(usuarios_id)
-    return cliente
+    return await service.listar_usuarios(db)
 
-@router.put("/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def atualizar(usuario_id: int, usuario_update: UsuarioBase ,service: UsuarioService = Depends(get_usuario_service)):
-    model = service.atualizar(usuario_id, usuario_update)
+
+@router.get("/{usuario_id}", response_model=UsuarioResponse)
+async def get_usuario(
+    usuario_id: int,
+    db: AsyncSession = Depends(get_db),
+    service: UsuarioService = Depends(get_usuario_service)
+):
+    usuario = await service.buscar_por_id(db, usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return usuario
+
+
+@router.put("/{usuario_id}", response_model=UsuarioResponse)
+async def atualizar(
+    usuario_id: int,
+    usuario_update: UsuarioBase,
+    db: AsyncSession = Depends(get_db),
+    service: UsuarioService = Depends(get_usuario_service)
+):
+    model = await service.atualizar(db, usuario_id, usuario_update)
     if not model:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
     return model
+
 
 @router.delete("/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def deletar(usuario_id: int,service: UsuarioService = Depends(get_usuario_service)):
-    usuario = service.buscar_por_id(usuario_id)
+async def deletar(
+    usuario_id: int,
+    db: AsyncSession = Depends(get_db),
+    service: UsuarioService = Depends(get_usuario_service)
+):
+    usuario = await service.buscar_por_id(db, usuario_id)
     if not usuario:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado")
-    model = service.deletar(usuario)
-
-    return model
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    await service.deletar(db, usuario)

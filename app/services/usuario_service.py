@@ -1,41 +1,45 @@
 from app.repositories.usuario_repository import UsuarioRepository
-from app.schemas.usuario_schema import UsuarioCreate,UsuarioBase,UsuarioResponse
+from app.schemas.usuario_schema import UsuarioCreate,UsuarioBase
 from app.models.usuario_model import Usuario
 from app.utils.hashing import codificar_senha,decodificar_senha
+from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import EmailStr
 
 class UsuarioService:
     def __init__(self, repository: UsuarioRepository):
         self.repository = repository
 
-    def criar_usuario(self, usuario_create: UsuarioCreate):
-        if self.repository.get_by_email(usuario_create.email):
+    async def criar_usuario(self, db: AsyncSession, usuario_create: UsuarioCreate):
+        # verificar se email já existe
+        existente = await self.repository.obter_email(db, usuario_create.email)
+        if existente:
             raise ValueError("Email já cadastrado")
+
         novo_usuario = Usuario(
             nome=usuario_create.nome,
             email=usuario_create.email,
             senha=codificar_senha(usuario_create.senha),
             papel=usuario_create.papel
         )
-        return self.repository.create(novo_usuario)
+        return await self.repository.criar(db, novo_usuario)
 
 
-    def listar_usuarios(self):
+    async def listar_usuarios(self, db: AsyncSession):
+        return await self.repository.obter_todos(db)
 
-        return self.repository.get_all()
+    async def buscar_por_id(self, db: AsyncSession, id: int):
+        return await self.repository.obter_id(db, id)
 
-    def buscar_por_id(self, id: int):
-        return self.repository.get_by_id(id)
+    async def deletar(self, db: AsyncSession, model: Usuario):
+        return await self.repository.deletar(db, model.id)
 
-    def deletar(self, model: Usuario):
-        return self.repository.delete(model)
+    async def atualizar(self, db: AsyncSession, id: int, usuario_update: UsuarioBase):
+        update_dict = usuario_update.model_dump(exclude_unset=True)
+        update_dict["senha"] = codificar_senha(usuario_update.senha)
+        return await self.repository.atualizar(db, id, update_dict)
 
-    def atualizar(self, id: int, usuario_update: UsuarioBase):
-        usuario_update.nome = usuario_update.nome.upper()
-        usuario_update.senha = codificar_senha(usuario_update.senha)
-        return self.repository.update(id, usuario_update)
-
-    def autenticar(self, email: str, senha: str):
-        usuario = self.repository.get_by_email(email)
+    async def autenticar(self, db: AsyncSession, email: EmailStr, senha: str):
+        usuario = await self.repository.obter_email(db, email)
         if not usuario or not decodificar_senha(senha, usuario.senha):
             return None
         return usuario

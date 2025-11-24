@@ -1,10 +1,17 @@
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, insert
 from app.models.amenidade_model import AmenidadeModel
 from app.models.foto_imovel_model import FotoImovelModel
+from app.models.imovel_amenidade_association import imovel_amenidade_table
 from app.models.imovel_model import ImovelModel
-from app.schemas.imovel_schema import (ImovelCreate, ImovelUpdate,ImovelResponse
+from app.models.foto_imovel_model import FotoImovelModel
+from app.models.amenidade_model import AmenidadeModel
+from sqlalchemy.orm import selectinload
+from app.schemas.imovel_schema import (
+    ImovelCreate,
+    ImovelUpdate,
+    ImovelResponse
 )
 from app.repositories.imovel_repository import ImovelRepository
 from app.repositories.foto_imovel_repository import FotoImovelRepository
@@ -16,18 +23,18 @@ foto_repo = FotoImovelRepository()
 class ImovelService:
 
     @staticmethod
-    def listar(db: AsyncSession) -> List[ImovelModel]:
-        return imovel_repo.get_all_full(db)
+    async def listar(db: AsyncSession) -> List[ImovelModel]:
+        return await imovel_repo.get_all_full(db)
 
     @staticmethod
-    def obter(db: AsyncSession, id: int) -> Optional[ImovelModel]:
-        return imovel_repo.get_full(db, id)
+    async def obter(db: AsyncSession, id: int) -> Optional[ImovelModel]:
+        return await imovel_repo.get_full(db, id)
+
 
     @staticmethod
-    @staticmethod
-    def criar(db: AsyncSession, data: ImovelCreate) -> ImovelModel:
+    async def criar(db: AsyncSession, data: ImovelCreate) -> ImovelModel:
         try:
-            # cria o imóvel
+            # cria imovel
             imovel = ImovelModel(
                 titulo=data.titulo,
                 descricao=data.descricao,
@@ -36,14 +43,17 @@ class ImovelService:
                 tipo_id=data.tipo_id,
                 usuario_id=data.usuario_id
             )
-            db.add(imovel)
-            db.flush()  # garante que imovel.id já existe sem commit
 
-            # amenidades
+            db.add(imovel)
+            await db.flush()  # agora imovel.id existe
+
+            # --- INSERÇÃO DE AMENIDADES DIRETO NA TABELA DE ASSOCIAÇÃO ---
             if data.amenidades_ids:
-                stmt = select(AmenidadeModel).where(AmenidadeModel.id.in_(data.amenidades_ids))
-                result = db.execute(stmt)
-                imovel.amenidades = result.scalars().all()
+                stmt = insert(imovel_amenidade_table).values([
+                    {"imovel_id": imovel.id, "amenidade_id": aid}
+                    for aid in data.amenidades_ids
+                ])
+                await db.execute(stmt)
 
             # fotos
             if data.fotos:
@@ -51,38 +61,56 @@ class ImovelService:
                     foto = FotoImovelModel(imovel_id=imovel.id, url=f.url)
                     db.add(foto)
 
-            db.commit()
-            db.refresh(imovel)
-            return imovel
+            await db.commit()
+
+            # retorna o imovel com tudo carregado
+            stmt = (
+                select(ImovelModel)
+                .options(
+                    selectinload(ImovelModel.amenidades),
+                    selectinload(ImovelModel.fotos),
+                    selectinload(ImovelModel.tipo),
+                )
+                .where(ImovelModel.id == imovel.id)
+            )
+            result = await db.execute(stmt)
+            return result.scalar_one()
 
         except Exception:
-            db.rollback()
+            await db.rollback()
             raise
 
     @staticmethod
-    def atualizar(db: AsyncSession, id: int, data: ImovelUpdate) -> Optional[ImovelModel]:
-        imovel = imovel_repo.get(db, id)
+    async def atualizar(db: AsyncSession, id: int, data: ImovelUpdate) -> ImovelModel | None:
+        stmt = select(ImovelModel).where(ImovelModel.id == id)
+        result = await db.execute(stmt)
+        imovel = result.scalar_one_or_none()
         if not imovel:
             return None
 
-        # aplica campos atualizáveis
         update_data = data.model_dump(exclude_unset=True)
         amenidades_ids = update_data.pop("amenidades_ids", None)
 
         for field, value in update_data.items():
             setattr(imovel, field, value)
 
-        # atualizar amenidades, se enviadas
+        # atualizar amenidades
         if amenidades_ids is not None:
             stmt = select(AmenidadeModel).where(AmenidadeModel.id.in_(amenidades_ids))
-            result = db.execute(stmt)
+            result = await db.execute(stmt)
             imovel.amenidades = result.scalars().all()
 
-        db.commit()
-        db.refresh(imovel)
+        await db.commit()
 
-        return imovel_repo.get_full(db, id)
-
-    @staticmethod
-    def excluir(db: AsyncSession, id: int) -> bool:
-        return imovel_repo.delete(db, id)
+        # recarrega com relacionamentos já carregados
+        stmt = (
+            select(ImovelModel)
+            .options(
+                selectinload(ImovelModel.amenidades),
+                selectinload(ImovelModel.fotos),
+                selectinload(ImovelModel.tipo),
+            )
+            .where(ImovelModel.id == id)
+        )
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()

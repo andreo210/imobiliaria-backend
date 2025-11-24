@@ -10,4 +10,4 @@ class AmenidadeModel(Base):
     nome = Column(String(100), nullable=False)
 
     # relação inversa com Imovel
-    imoveis = relationship("ImovelModel",secondary=imovel_amenidade_table, back_populates="amenidades")
+    imoveis = relationship("ImovelModel",secondary=imovel_amenidade_table, back_populates="amenidades",lazy="raise")

@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String, DateTime,ForeignKey
 from app.core.database import Base
 from datetime import datetime
 from sqlalchemy.orm import relationship
-from app.models.imovel_model import ImovelModel
 
 class FotoImovelModel(Base):
     __tablename__ = "FotoImovel"
@@ -14,7 +13,7 @@ class FotoImovelModel(Base):
     # chave estrangeira
     imovel_id: int = Column(Integer, ForeignKey("Imovel.id", ondelete="CASCADE"), nullable=False)
     # relação
-    imovel = relationship("ImovelModel", back_populates="fotos")
+    imovel = relationship("ImovelModel", back_populates="fotos", lazy="raise")
 
     def __repr__(self) -> str:
         return f"<FotoImovel(id={self.id}, imovel_id={self.imovel_id}, url={self.url})>"
