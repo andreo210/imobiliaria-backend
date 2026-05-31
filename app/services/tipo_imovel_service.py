@@ -5,7 +5,7 @@ class TipoImovelService:
     def __init__(self, repository: TipoImovelRepository):
         self.repository = repository
 
-    async def listar_cliente(self, db: AsyncSession):
+    async def listar_tipoimovel(self, db: AsyncSession):
         return await self.repository.obter_todos(db)
 
     async def buscar_por_id(self, id: int,db: AsyncSession ):

@@ -1,14 +1,14 @@
-from app.repositories.base_repository import BaseRepository
-from app.schemas.cliente_schema import ClienteCreate,ClienteBase,ClienteRead
+from app.repositories.cliente_repository import ClienteRepository
+from app.schemas.cliente_schema import ClienteCreate, ClienteBase
 from app.models.cliente_model import ClienteModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 class ClienteService:
+    def __init__(self, repository: ClienteRepository):
+        self.repository = repository
 
-    @staticmethod
-    async def criar_cliente(db:AsyncSession, cliente_create: ClienteCreate):
-        repo = BaseRepository(ClienteModel)
-        email = await repo.obter_email(db,cliente_create.email)
+    async def criar_cliente(self, db: AsyncSession, cliente_create: ClienteCreate):
+        email = await self.repository.obter_email(db, cliente_create.email)
         if email:
             raise ValueError("Email já cadastrado")
         novo_cliente = ClienteModel(
@@ -17,25 +17,17 @@ class ClienteService:
             telefone=cliente_create.telefone,
             observacao=cliente_create.observacao
         )
-        return await repo.criar(db,novo_cliente)
+        return await self.repository.criar(db, novo_cliente)
 
-    @staticmethod
-    async def listar_cliente(db: AsyncSession):
-        repo = BaseRepository(ClienteModel)
-        return await repo.obter_todos(db)
+    async def listar_cliente(self, db: AsyncSession):
+        return await self.repository.obter_todos(db)
 
-    @staticmethod
-    async def buscar_por_id(db: AsyncSession, id: int):
-        repo = BaseRepository(ClienteModel)
-        return await repo.obter_id(db,id)
+    async def buscar_por_id(self, db: AsyncSession, id: int):
+        return await self.repository.obter_id(db, id)
 
-    @staticmethod
-    async def deletar(db: AsyncSession, model: ClienteModel):
-        repo = BaseRepository(ClienteModel)
-        return await repo.deletar(db,model.id)
+    async def deletar(self, db: AsyncSession, model: ClienteModel):
+        return await self.repository.deletar(db, model.id)
 
-    @staticmethod
-    async def atualizar(db: AsyncSession, id: int, data: ClienteBase):
-        repo = BaseRepository(ClienteModel)
+    async def atualizar(self, db: AsyncSession, id: int, data: ClienteBase):
         update_dict = data.model_dump(exclude_unset=True)
-        return await repo.atualizar(db,id,update_dict)
+        return await self.repository.atualizar(db, id, update_dict)

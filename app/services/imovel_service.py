@@ -5,36 +5,26 @@ from app.models.amenidade_model import AmenidadeModel
 from app.models.foto_imovel_model import FotoImovelModel
 from app.models.imovel_amenidade_association import imovel_amenidade_table
 from app.models.imovel_model import ImovelModel
-from app.models.foto_imovel_model import FotoImovelModel
-from app.models.amenidade_model import AmenidadeModel
 from sqlalchemy.orm import selectinload
 from app.schemas.imovel_schema import (
     ImovelCreate,
     ImovelUpdate,
-    ImovelResponse
 )
 from app.repositories.imovel_repository import ImovelRepository
-from app.repositories.foto_imovel_repository import FotoImovelRepository
-
-imovel_repo = ImovelRepository()
-foto_repo = FotoImovelRepository()
 
 
 class ImovelService:
+    def __init__(self, repository: ImovelRepository):
+        self.repository = repository
 
-    @staticmethod
-    async def listar(db: AsyncSession) -> List[ImovelModel]:
-        return await imovel_repo.get_all_full(db)
+    async def listar(self, db: AsyncSession) -> List[ImovelModel]:
+        return await self.repository.get_all_full(db)
 
-    @staticmethod
-    async def obter(db: AsyncSession, id: int) -> Optional[ImovelModel]:
-        return await imovel_repo.get_full(db, id)
+    async def obter(self, db: AsyncSession, id: int) -> Optional[ImovelModel]:
+        return await self.repository.get_full(db, id)
 
-
-    @staticmethod
-    async def criar(db: AsyncSession, data: ImovelCreate) -> ImovelModel:
+    async def criar(self, db: AsyncSession, data: ImovelCreate) -> ImovelModel:
         try:
-            # cria imovel
             imovel = ImovelModel(
                 titulo=data.titulo,
                 descricao=data.descricao,
@@ -45,9 +35,8 @@ class ImovelService:
             )
 
             db.add(imovel)
-            await db.flush()  # agora imovel.id existe
+            await db.flush()
 
-            # --- INSERÇÃO DE AMENIDADES DIRETO NA TABELA DE ASSOCIAÇÃO ---
             if data.amenidades_ids:
                 stmt = insert(imovel_amenidade_table).values([
                     {"imovel_id": imovel.id, "amenidade_id": aid}
@@ -55,7 +44,6 @@ class ImovelService:
                 ])
                 await db.execute(stmt)
 
-            # fotos
             if data.fotos:
                 for f in data.fotos:
                     foto = FotoImovelModel(imovel_id=imovel.id, url=f.url)
@@ -63,7 +51,6 @@ class ImovelService:
 
             await db.commit()
 
-            # retorna o imovel com tudo carregado
             stmt = (
                 select(ImovelModel)
                 .options(
@@ -80,8 +67,7 @@ class ImovelService:
             await db.rollback()
             raise
 
-    @staticmethod
-    async def atualizar(db: AsyncSession, id: int, data: ImovelUpdate) -> ImovelModel | None:
+    async def atualizar(self, db: AsyncSession, id: int, data: ImovelUpdate) -> ImovelModel | None:
         stmt = select(ImovelModel).where(ImovelModel.id == id)
         result = await db.execute(stmt)
         imovel = result.scalar_one_or_none()
@@ -94,7 +80,6 @@ class ImovelService:
         for field, value in update_data.items():
             setattr(imovel, field, value)
 
-        # atualizar amenidades
         if amenidades_ids is not None:
             stmt = select(AmenidadeModel).where(AmenidadeModel.id.in_(amenidades_ids))
             result = await db.execute(stmt)
@@ -102,7 +87,6 @@ class ImovelService:
 
         await db.commit()
 
-        # recarrega com relacionamentos já carregados
         stmt = (
             select(ImovelModel)
             .options(
@@ -114,3 +98,6 @@ class ImovelService:
         )
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def excluir(self, db: AsyncSession, id: int) -> bool:
+        return await self.repository.deletar(db, id)

@@ -1,11 +1,10 @@
+import os
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import OAuth2PasswordBearer
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-SECRET_KEY = "sua_chave_super_secreta"
+SECRET_KEY = os.getenv("SECRET_KEY", "sua_chave_super_secreta")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7

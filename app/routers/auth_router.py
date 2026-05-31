@@ -53,7 +53,7 @@ async def refresh(request: RefreshRequest, db: AsyncSession = Depends(get_db)):
 
 
 # rota de logout
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/logout", status_code=status.HTTP_200_OK)
 async def logout(request: RefreshRequest, db: AsyncSession = Depends(get_db)):
     refresh_repo = RefreshTokenRepository()
     auth_service = AuthService(refresh_repo)

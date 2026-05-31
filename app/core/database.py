@@ -7,18 +7,24 @@ DATABASE_URL = os.getenv(
     "mysql+aiomysql://root:Taina2011.@localhost:3306/imobiliaria"
 )
 
-engine = create_async_engine(DATABASE_URL, echo=True)
-AsyncSessionLocal = sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False,
-    autocommit=False
-)
-
 Base = declarative_base()
 
-# Dependency para FastAPI
+
+def get_engine():
+    return create_async_engine(DATABASE_URL, echo=True)
+
+
+def get_session_local():
+    engine = get_engine()
+    return sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autoflush=False,
+        autocommit=False
+    )
+
+
 async def get_db() -> AsyncSession:
-    async with AsyncSessionLocal() as session:
+    async with get_session_local()() as session:
         yield session

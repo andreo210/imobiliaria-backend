@@ -1,14 +1,15 @@
+import os
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 
-SECRET_KEY = "sua_chave_super_secreta"
+SECRET_KEY = os.getenv("SECRET_KEY", "sua_chave_super_secreta")
 ALGORITHM = "HS256"
 
-security =  HTTPBearer()
+security = HTTPBearer()
 
 def obter_usuario_corrente(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials  # aqui você pega a string JWT
+    token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         usuario_id = payload.get("sub")
@@ -29,10 +30,7 @@ def obter_usuario_corrente(credentials: HTTPAuthorizationCredentials = Depends(s
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido ou expirado")
 
-# MÉTODO ESTÁTICO PARA VERIFICAR ADMIN
-@staticmethod
 def verificar_admin(usuario: dict = Depends(obter_usuario_corrente)):
-    """Verifica se o usuário tem papel de admin"""
     if usuario.get("papel") != "admin":
         raise HTTPException(
             status_code=403,
